@@ -1,6 +1,6 @@
 {
   "name": "vsce-yarn-patch",
-  "version": "1.66.1",
+  "version": "1.66.2",
   "description": "VSCode Extension Manager",
   "repository": {
     "type": "git",

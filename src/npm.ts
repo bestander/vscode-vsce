@@ -71,7 +71,7 @@ export interface YarnDependency {
 	children: YarnDependency[];
 }
 
-function asYarnDependency(prefix: string, name: string, prune: boolean, parentStack:string[]): YarnDependency | null {
+function asYarnDependency(prefix: string, name: string, prune: boolean, parentStack:string[], visitedDeps: Set<string>): YarnDependency | null {
 	if (prune && /@[\^~]/.test(name)) {
 		return null;
 	}
@@ -91,6 +91,10 @@ function asYarnDependency(prefix: string, name: string, prune: boolean, parentSt
 	if(!dependencyPath) {
 		dependencyPath = path.join(prefix, "node_modules", name)
 	}
+	if (visitedDeps.has(dependencyPath)) {
+        return null;
+    }
+    visitedDeps.add(dependencyPath);
 	const depPackage = require(path.join(dependencyPath, "package.json"));
 	const children = [];
 	parentStack.push(name);
@@ -98,7 +102,7 @@ function asYarnDependency(prefix: string, name: string, prune: boolean, parentSt
 		const depChildren = Object.keys(depPackage.dependencies);
 		depChildren.forEach((childName) => {
 			if(parentStack.indexOf(childName) === -1) {
-				const dep = asYarnDependency(dependencyPath, childName, prune, parentStack.concat());
+				const dep = asYarnDependency(dependencyPath, childName, prune, parentStack.concat(), visitedDeps);
 				if (dep) {
 					children.push(dep);
 				}
@@ -160,9 +164,10 @@ async function getYarnProductionDependencies(cwd: string, packagedDependencies?:
 	const usingPackagedDependencies = Array.isArray(packagedDependencies);
 	const rootPackage = require(path.join(cwd, 'package.json'));
 	const trees = Object.keys(rootPackage.dependencies);
+	const visitedDeps = new Set();
 
 	let result = trees
-		.map(tree => asYarnDependency(path.join(cwd, 'node_modules'), tree, !usingPackagedDependencies, []))
+		.map(tree => asYarnDependency(path.join(cwd, 'node_modules'), tree, !usingPackagedDependencies, [], visitedDeps))
 		.filter(dep => !!dep);
 
 	if (usingPackagedDependencies) {
