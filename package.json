@@ -1,5 +1,5 @@
 {
-  "name": "vsce",
+  "name": "vsce-yarn-patch",
   "version": "1.66.0",
   "description": "VSCode Extension Manager",
   "repository": {
